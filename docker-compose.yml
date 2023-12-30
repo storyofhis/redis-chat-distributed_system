@@ -3,15 +3,69 @@ networks:
     ssnet:
        ipam:
          config:
-         - subnet: 172.200.210.0/24
+         - subnet: 172.28.0.0/24
+
 services:
-  redis:
-    container_name: redis-server
+  redis-master:
+    container_name: redis-master
     image: redis:latest
     ports:
-      - "6379:6379"  # Expose Redis port if needed
+      - "6379:6379"
     networks:
       - ssnet
+    command: redis-server --appendonly yes
+
+  redis-replica1:
+    container_name: redis-replica1
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    networks:
+      - ssnet
+    command: redis-server --appendonly yes --slaveof redis-master 6379
+    
+  redis-replica2:
+    container_name: redis-replica2
+    image: redis:latest
+    ports:
+      - "6381:6379"
+    networks:
+      - ssnet
+    command: redis-server --appendonly yes --slaveof redis-master 6379
+
+  redis-sentinel_1:
+    container_name: redis-sentinel_1
+    image: redis:latest
+    ports:
+      - "26379:26379"
+    networks:
+      - ssnet
+    volumes:
+      - ./workmesin2/sentinel/sentinel_1:/data
+    command: redis-sentinel /data/sentinel.conf
+
+  redis-sentinel_2:
+    container_name: redis-sentinel_2
+    image: redis:latest
+    ports:
+      - "26380:26379"
+    networks:
+      - ssnet
+    volumes:
+      - ./workmesin2/sentinel/sentinel_2:/data
+    command: redis-sentinel /data/sentinel.conf
+
+  redis-sentinel_3:
+    container_name: redis-sentinel_3
+    image: redis:latest
+    ports:
+      - "26381:26379"
+    networks:
+      - ssnet
+    volumes:
+      - ./workmesin2/sentinel/sentinel_3:/data
+    command: redis-sentinel /data/sentinel.conf
+    
   mesin1:
     container_name: mesin-1
     image: royyana/rm-jupyter-go:1.00
