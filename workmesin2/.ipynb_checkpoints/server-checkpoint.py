@@ -2,18 +2,26 @@ import zmq
 import time
 import configparser
 
-import redis
+from redis.sentinel import Sentinel
 
-# Connect to Redis
-redis_host = 'redis'
-redis_port = 6379
-redis_db = 0
-redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db)
+# Connect to Redis Sentinel
+sentinels = [('192.168.1.7', 26379), ('192.168.1.7', 26380), ('192.168.1.7', 26381)]
+service_name = 'mymaster'
+
+def get_redis_sentinel():
+    return Sentinel(sentinels, socket_timeout=0.1)
+
+def get_master_conn():
+    sentinel = get_redis_sentinel()
+    return sentinel.master_for(service_name, socket_timeout=0.1)
+
+redis_client = get_master_conn()
 
 def store_in_redis(message):
     # Store the message in Redis with a key representing chat history
     # You can use Redis lists or other structures depending on your needs
     redis_client.lpush('chat_history', message)
+
 
 
 config = configparser.ConfigParser()
